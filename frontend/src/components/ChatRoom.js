@@ -17,9 +17,64 @@ const ChatRoom = () => {
   const socketRef = useRef(null);
 
   useEffect(() => {
-    const initializeRoom = async () => {
+    // Ensure user is loaded before proceeding
+    if (!user) {
+      return;
+    }
+
+    const socket = socketManager.connect();
+    socketRef.current = socket;
+
+    // --- Define handlers to be used in listeners and cleanup ---
+    const handleReceiveMessage = (messageData) => {
+      setMessages((prev) => [...prev, messageData]);
+    };
+
+    const handleUserJoined = (userData) => {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now(),
+          message: `${userData.username} joined the room`,
+          system: true,
+          timestamp: new Date(),
+        },
+      ]);
+    };
+
+    const handleUserLeft = (userData) => {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now(),
+          message: `${userData.username} left the room`,
+          system: true,
+          timestamp: new Date(),
+        },
+      ]);
+    };
+
+    const handleRoomUsers = (users) => {
+      setRoomUsers(users);
+    };
+    // -----------------------------------------------------------
+
+    // Join room
+    socket.emit("join-room", {
+      roomId,
+      userId: user.id,
+      username: user.username,
+    });
+
+    // Attach event listeners
+    socket.on("receive-message", handleReceiveMessage);
+    socket.on("user-joined", handleUserJoined);
+    socket.on("user-left", handleUserLeft);
+    socket.on("room-users", handleRoomUsers);
+
+    // Initial fetch of room info
+    const fetchRoomInfo = async () => {
       try {
-        // Fetch room info
         const response = await fetch(
           `http://localhost:5000/api/rooms/${roomId}`,
           {
@@ -28,70 +83,28 @@ const ChatRoom = () => {
             },
           }
         );
-
-        if (!response.ok) {
-          throw new Error("Room not found");
-        }
-
+        if (!response.ok) throw new Error("Room not found");
         const data = await response.json();
         setRoomInfo(data.room);
-
-        // Initialize socket connection
-        socketRef.current = socketManager.connect();
-        const socket = socketRef.current;
-
-        // Join room
-        socket.emit("join-room", {
-          roomId,
-          userId: user.id,
-          username: user.username,
-        });
-
-        // Socket event listeners
-        socket.on("receive-message", (messageData) => {
-          setMessages((prev) => [...prev, messageData]);
-        });
-
-        socket.on("user-joined", (userData) => {
-          setMessages((prev) => [
-            ...prev,
-            {
-              id: Date.now(),
-              message: `${userData.username} joined the room`,
-              system: true,
-              timestamp: new Date(),
-            },
-          ]);
-        });
-
-        socket.on("user-left", (userData) => {
-          setMessages((prev) => [
-            ...prev,
-            {
-              id: Date.now(),
-              message: `${userData.username} left the room`,
-              system: true,
-              timestamp: new Date(),
-            },
-          ]);
-        });
-
-        socket.on("room-users", (users) => {
-          setRoomUsers(users);
-        });
-
         setLoading(false);
       } catch (error) {
-        console.error("Error initializing room:", error);
+        console.error("Error fetching room info:", error);
         navigate("/dashboard");
       }
     };
+    fetchRoomInfo();
 
-    initializeRoom();
-
+    // Corrected cleanup function
     return () => {
-      if (socketRef.current) {
-        socketRef.current.emit("leave-room", {
+      if (socket) {
+        // Remove the specific listeners
+        socket.off("receive-message", handleReceiveMessage);
+        socket.off("user-joined", handleUserJoined);
+        socket.off("user-left", handleUserLeft);
+        socket.off("room-users", handleRoomUsers);
+
+        // Emit leave event and disconnect
+        socket.emit("leave-room", {
           roomId,
           userId: user.id,
           username: user.username,
