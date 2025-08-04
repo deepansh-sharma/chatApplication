@@ -20,6 +20,7 @@ const config = {
       GET_BY_ID: "/rooms",
       JOIN: "/rooms/join",
       LEAVE: "/rooms/leave",
+      VALIDATE: "/rooms/validate",
     },
     MESSAGES: {
       GET_HISTORY: "/messages",

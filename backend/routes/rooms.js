@@ -24,6 +24,35 @@ router.post("/create", auth, async (req, res) => {
   }
 });
 
+//  Validate multiple room IDs
+
+// New Route: Validate multiple room IDs
+router.post("/validate", auth, async (req, res) => {
+  try {
+    const { roomIds } = req.body;
+
+    if (!Array.isArray(roomIds) || roomIds.length === 0) {
+      return res.json({ validRoomIds: [] });
+    }
+
+    // Find all rooms where the roomId is in the provided array
+    const existingRooms = await Room.find({ roomId: { $in: roomIds } }).select(
+      "roomId -_id"
+    );
+
+    // Extract just the roomId strings
+    const validRoomIds = existingRooms.map((room) => room.roomId);
+
+    res.json({ validRoomIds });
+  } catch (error) {
+    console.error("Validate rooms error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
+
+// ... (other routes)
+
+module.exports = router;
 // Get room by ID
 router.get("/:roomId", auth, async (req, res) => {
   try {
