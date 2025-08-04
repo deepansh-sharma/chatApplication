@@ -153,26 +153,28 @@ const Signup = () => {
   const strengthInfo = getPasswordStrengthText(passwordStrength);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         {/* Header */}
         <div className="text-center">
-          <div className="mx-auto h-16 w-16 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center mb-4">
-            <span className="text-white font-bold text-2xl">C</span>
-          </div>
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">
+          <Link to="/" className="inline-block">
+            <div className="mx-auto h-16 w-16 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center mb-4">
+              <span className="text-white font-bold text-2xl">C</span>
+            </div>
+          </Link>
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
             Create your account
           </h2>
-          <p className="text-gray-600">
+          <p className="text-gray-600 dark:text-gray-300">
             Join {config.APP_NAME} and start connecting with your team
           </p>
         </div>
 
         {/* Form */}
-        <div className="bg-white rounded-xl shadow-lg p-8">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8">
           <form className="space-y-6" onSubmit={handleSubmit}>
             {errors.general && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg p-4">
                 <div className="flex">
                   <div className="flex-shrink-0">
                     <svg
@@ -188,7 +190,9 @@ const Signup = () => {
                     </svg>
                   </div>
                   <div className="ml-3">
-                    <p className="text-sm text-red-800">{errors.general}</p>
+                    <p className="text-sm text-red-800 dark:text-red-200">
+                      {errors.general}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -197,7 +201,7 @@ const Signup = () => {
             <div>
               <label
                 htmlFor="username"
-                className="block text-sm font-medium text-gray-700 mb-2"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
               >
                 Username
               </label>
@@ -210,8 +214,10 @@ const Signup = () => {
                 value={formData.username}
                 onChange={handleChange}
                 className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
-                  errors.username ? "border-red-300" : "border-gray-300"
-                }`}
+                  errors.username
+                    ? "border-red-300"
+                    : "border-gray-300 dark:border-gray-600"
+                } bg-white dark:bg-gray-700 text-gray-900 dark:text-white`}
                 placeholder="Choose a username"
                 disabled={loading}
               />
@@ -223,7 +229,7 @@ const Signup = () => {
             <div>
               <label
                 htmlFor="email"
-                className="block text-sm font-medium text-gray-700 mb-2"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
               >
                 Email Address
               </label>
@@ -236,8 +242,10 @@ const Signup = () => {
                 value={formData.email}
                 onChange={handleChange}
                 className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
-                  errors.email ? "border-red-300" : "border-gray-300"
-                }`}
+                  errors.email
+                    ? "border-red-300"
+                    : "border-gray-300 dark:border-gray-600"
+                } bg-white dark:bg-gray-700 text-gray-900 dark:text-white`}
                 placeholder="Enter your email"
                 disabled={loading}
               />
@@ -249,7 +257,7 @@ const Signup = () => {
             <div>
               <label
                 htmlFor="password"
-                className="block text-sm font-medium text-gray-700 mb-2"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
               >
                 Password
               </label>
@@ -263,8 +271,10 @@ const Signup = () => {
                   value={formData.password}
                   onChange={handleChange}
                   className={`w-full px-4 py-3 pr-12 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
-                    errors.password ? "border-red-300" : "border-gray-300"
-                  }`}
+                    errors.password
+                      ? "border-red-300"
+                      : "border-gray-300 dark:border-gray-600"
+                  } bg-white dark:bg-gray-700 text-gray-900 dark:text-white`}
                   placeholder="Create a password"
                   disabled={loading}
                 />
@@ -315,7 +325,7 @@ const Signup = () => {
               {formData.password && (
                 <div className="mt-2">
                   <div className="flex items-center">
-                    <div className="flex-1 bg-gray-200 rounded-full h-2">
+                    <div className="flex-1 bg-gray-200 dark:bg-gray-600 rounded-full h-2">
                       <div
                         className={`h-2 rounded-full transition-all ${
                           passwordStrength <= 1
@@ -346,7 +356,7 @@ const Signup = () => {
             <div>
               <label
                 htmlFor="confirmPassword"
-                className="block text-sm font-medium text-gray-700 mb-2"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
               >
                 Confirm Password
               </label>
@@ -362,8 +372,8 @@ const Signup = () => {
                   className={`w-full px-4 py-3 pr-12 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
                     errors.confirmPassword
                       ? "border-red-300"
-                      : "border-gray-300"
-                  }`}
+                      : "border-gray-300 dark:border-gray-600"
+                  } bg-white dark:bg-gray-700 text-gray-900 dark:text-white`}
                   placeholder="Confirm your password"
                   disabled={loading}
                 />
@@ -427,7 +437,7 @@ const Signup = () => {
               />
               <label
                 htmlFor="agree-terms"
-                className="ml-2 block text-sm text-gray-700"
+                className="ml-2 block text-sm text-gray-700 dark:text-gray-300"
               >
                 I agree to the{" "}
                 <a href="#" className="text-blue-600 hover:text-blue-500">
@@ -474,7 +484,7 @@ const Signup = () => {
             </button>
 
             <div className="text-center">
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
                 Already have an account?{" "}
                 <Link
                   to="/login"

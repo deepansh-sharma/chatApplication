@@ -14,11 +14,11 @@ const Dashboard = () => {
   const [error, setError] = useState("");
   const [recentRooms, setRecentRooms] = useState([]);
   const [recentRoomsLoading, setRecentRoomsLoading] = useState(true);
+  const [invalidRooms, setInvalidRooms] = useState([]);
 
   const { user, apiClient } = useAuth();
   const navigate = useNavigate();
 
-  // Using useCallback to create a stable function for the useEffect dependency array
   const validateAndSetRecentRooms = useCallback(async () => {
     if (!user?.id) {
       setRecentRooms([]);
@@ -43,6 +43,10 @@ const Dashboard = () => {
           const validRooms = savedRooms.filter((room) =>
             validRoomIds.includes(room.roomId)
           );
+          const invalidRoomIds = roomIds.filter(
+            (id) => !validRoomIds.includes(id)
+          );
+          setInvalidRooms(invalidRoomIds);
 
           if (validRooms.length !== savedRooms.length) {
             localStorage.setItem(
@@ -67,7 +71,6 @@ const Dashboard = () => {
     }
   }, [user?.id, apiClient]);
 
-  // This useEffect now correctly handles fetching and validating rooms on load
   useEffect(() => {
     validateAndSetRecentRooms();
   }, [validateAndSetRecentRooms]);
@@ -77,7 +80,7 @@ const Dashboard = () => {
       const updatedRooms = [
         room,
         ...prevRooms.filter((r) => r.roomId !== room.roomId),
-      ].slice(0, 5);
+      ].slice(0, 10);
       localStorage.setItem(
         `recentRooms_${user.id}`,
         JSON.stringify(updatedRooms)
@@ -88,7 +91,6 @@ const Dashboard = () => {
 
   const createRoom = async (e) => {
     e.preventDefault();
-    // ... createRoom logic remains the same
     if (!roomName.trim()) {
       setError("Please enter a room name");
       return;
@@ -115,7 +117,6 @@ const Dashboard = () => {
 
   const joinRoom = async (e) => {
     e.preventDefault();
-    // ... joinRoom logic remains the same
     if (!roomId.trim()) {
       setError("Please enter a room ID");
       return;
@@ -153,10 +154,8 @@ const Dashboard = () => {
       navigate(`/room/${room.roomId}`);
     } catch (error) {
       if (error.response?.status === 404) {
-        // Room is deleted, show an error and refresh the list
-        setError(
-          `Room "${room.name}" no longer exists. Removing from your list.`
-        );
+        // Room is deleted, mark as invalid and refresh the list
+        setInvalidRooms((prev) => [...prev, room.roomId]);
         validateAndSetRecentRooms(); // Re-run validation which will remove it
       } else {
         setError("Could not connect to the room. Please try again later.");
@@ -167,6 +166,16 @@ const Dashboard = () => {
   const clearRecentRooms = () => {
     setRecentRooms([]);
     localStorage.removeItem(`recentRooms_${user.id}`);
+  };
+
+  const clearInvalidRooms = () => {
+    const validRooms = recentRooms.filter(
+      (room) => !invalidRooms.includes(room.roomId)
+    );
+    setRecentRooms(validRooms);
+    localStorage.setItem(`recentRooms_${user.id}`, JSON.stringify(validRooms));
+    setInvalidRooms([]);
+    setError("");
   };
 
   const formatDate = (dateString) => {
@@ -212,6 +221,8 @@ const Dashboard = () => {
             joinRecentRoom={joinRecentRoom}
             clearRecentRooms={clearRecentRooms}
             formatDate={formatDate}
+            invalidRooms={invalidRooms}
+            clearInvalidRooms={clearInvalidRooms}
           />
         </div>
       </main>
