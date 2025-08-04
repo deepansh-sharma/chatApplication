@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import socketManager from "../utils/socket";
+import ConfirmationModal from "./ConfirmationModal.js";
 
 const LoadingSpinner = () => (
   <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center transition-colors duration-200">
@@ -27,9 +28,11 @@ const ChatRoom = () => {
   const [isConnected, setIsConnected] = useState(false);
   const [isTyping, setIsTyping] = useState({});
   const [showUsersList, setShowUsersList] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   const { roomId } = useParams();
-  const { user } = useAuth();
+  const { user, apiClient } = useAuth();
   const { isDarkMode } = useTheme();
   const navigate = useNavigate();
   const messagesEndRef = useRef(null);
@@ -65,6 +68,12 @@ const ChatRoom = () => {
         socketRef.current = socket;
 
         // Socket event handlers with duplicate prevention
+        const handleChatHistory = (history) => {
+          if (isMounted) {
+            setMessages(history);
+            setLoading(false); // Stop loading ONLY after history is received
+          }
+        };
         const handleConnect = () => {
           if (isMounted) {
             setIsConnected(true);
@@ -170,9 +179,12 @@ const ChatRoom = () => {
         socket.off("user-left");
         socket.off("room-users");
         socket.off("user-typing");
+        socket.off("chat-history");
 
         // Attach event listeners
+
         socket.on("connect", handleConnect);
+        socket.on("chat-history", handleChatHistory);
         socket.on("disconnect", handleDisconnect);
         socket.on("receive-message", handleReceiveMessage);
         socket.on("user-joined", handleUserJoined);
@@ -198,11 +210,11 @@ const ChatRoom = () => {
         }
 
         // Set loading to false after ensuring connection
-        setTimeout(() => {
-          if (isMounted) {
-            setLoading(false);
-          }
-        }, 1000);
+        // setTimeout(() => {
+        //   if (isMounted) {
+        //     setLoading(false);
+        //   }
+        // }, 1000);
       } catch (error) {
         console.error("Error initializing room:", error);
         if (isMounted) {
@@ -221,6 +233,7 @@ const ChatRoom = () => {
         console.log("Cleaning up socket connection");
 
         // Remove all listeners
+        socket.off("chat-history");
         socket.off("connect");
         socket.off("disconnect");
         socket.off("receive-message");
@@ -353,6 +366,23 @@ const ChatRoom = () => {
     } are typing...`;
   };
 
+  const handleDeleteRoom = async () => {
+    setIsDeleting(true);
+    try {
+      await apiClient.delete(`/rooms/${roomId}`);
+      navigate("/dashboard");
+    } catch (error) {
+      console.error("Failed to delete room:", error);
+      alert(
+        error.response?.data?.message ||
+          "Failed to delete the room. Please try again."
+      );
+    } finally {
+      setIsDeleting(false);
+      setIsDeleteModalOpen(false);
+    }
+  };
+
   const getUserInitials = (username) => {
     if (!username) return "?";
     return username.charAt(0).toUpperCase();
@@ -379,6 +409,19 @@ const ChatRoom = () => {
 
   return (
     <div className="h-screen bg-gray-50 dark:bg-gray-900 flex flex-col transition-colors duration-200">
+      {/* Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={handleDeleteRoom}
+        title="Delete Room"
+        message="Are you sure you want to delete this room? This action cannot be undone and all messages will be permanently lost."
+        confirmText="Delete Room"
+        cancelText="Cancel"
+        type="danger"
+        isLoading={isDeleting}
+      />
+
       {/* Header */}
       <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 px-4 sm:px-6 py-4 transition-colors duration-200">
         <div className="flex items-center justify-between">
@@ -478,10 +521,34 @@ const ChatRoom = () => {
               {roomUsers.length} {roomUsers.length === 1 ? "member" : "members"}
             </div>
 
+            {/* Delete room button - only show for room creator */}
+            {roomInfo?.createdBy?._id === user.id && (
+              <button
+                onClick={() => setIsDeleteModalOpen(true)}
+                disabled={isDeleting}
+                className="hidden lg:flex items-center px-4 py-2 text-sm font-medium text-red-700 dark:text-red-500 bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 rounded-lg transition-colors disabled:opacity-50"
+              >
+                <svg
+                  className="w-4 h-4 mr-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                  />
+                </svg>
+                {isDeleting ? "Deleting..." : "Delete"}
+              </button>
+            )}
+
             {/* Leave room button */}
             <button
               onClick={leaveRoom}
-              className="hidden lg:flex items-center px-4 py-2 text-sm font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+              className="hidden lg:flex items-center px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-400 bg-gray-100 dark:bg-gray-700/50 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors"
             >
               <svg
                 className="w-4 h-4 mr-2"
